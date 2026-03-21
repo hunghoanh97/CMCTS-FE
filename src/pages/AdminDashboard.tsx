@@ -146,13 +146,13 @@ const AdminDashboard: React.FC = () => {
                                                 <td className="px-4 py-3 text-gray-500">{u.email}</td>
                                                 <td className="px-4 py-3 font-bold text-blue-600">{u.totalXP}</td>
                                                 <td className="px-4 py-3">
-                                                    <span className={`px-2 py-1 rounded text-xs font-bold ${u.completedQuizzes > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                                        {u.completedQuizzes} chặng
-                                                    </span>
-                                                </td>
-                                                <td className="px-4 py-3 text-gray-500 text-sm">
-                                                    {u.lastOnlineAt ? new Date(u.lastOnlineAt).toLocaleString('vi-VN') : 'Chưa đăng nhập'}
-                                                </td>
+                                                <span className={`px-2 py-1 rounded text-xs font-bold ${u.completedQuizzes > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                                    {u.completedQuizzes} chặng
+                                                </span>
+                                            </td>
+                                                <td className="px-4 py-3 text-gray-500 text-sm whitespace-nowrap">
+                                                {u.lastOnlineAt ? new Date(u.lastOnlineAt).toLocaleString('vi-VN') : 'Chưa đăng nhập'}
+                                            </td>
                                                 <td className="px-4 py-3 text-center">
                                                     <button 
                                                         onClick={() => handleRemind(u.email)}

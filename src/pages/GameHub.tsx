@@ -7,12 +7,22 @@ interface Stage {
     name: string;
     description: string;
     isUnlocked: boolean;
+    isCompleted?: boolean;
+}
+
+interface Option {
+    id: number;
+    content: string;
 }
 
 interface Question {
     id: number;
     content: string;
-    options: { id: number, content: string }[];
+    options: Option[];
+    hasAnswered?: boolean;
+    isCorrect?: boolean;
+    selectedAnswerId?: number;
+    correctAnswerId?: number;
 }
 
 interface UserProfile {
@@ -41,7 +51,7 @@ const GameHub: React.FC = () => {
     const [stages, setStages] = useState<Stage[]>([]);
     const [activeStage, setActiveStage] = useState<number | null>(null);
     const [questions, setQuestions] = useState<Question[]>([]);
-    const [answers, setAnswers] = useState<Record<number, number>>({});
+    const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
     const [result, setResult] = useState<string | null>(null);
     
     const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -59,8 +69,22 @@ const GameHub: React.FC = () => {
                     api.get('/user/profile'),
                     api.get('/user/leaderboard')
                 ]);
-                setStages(stagesRes.data);
+                const fetchedStages = stagesRes.data;
+                setStages(fetchedStages);
                 setProfile(profileRes.data);
+
+                // Auto-select the first unlocked and UNCOMPLETED stage, or the last unlocked stage if all are completed
+                if (fetchedStages && fetchedStages.length > 0) {
+                    const firstUncompletedStage = fetchedStages.find((s: Stage) => s.isUnlocked && !s.isCompleted);
+                    if (firstUncompletedStage) {
+                        handleSelectStage(firstUncompletedStage.id);
+                    } else {
+                        const lastUnlockedStage = [...fetchedStages].reverse().find((s: Stage) => s.isUnlocked);
+                        if (lastUnlockedStage) {
+                            handleSelectStage(lastUnlockedStage.id);
+                        }
+                    }
+                }
                 setIndividualLeaderboard(lbRes.data.individual);
                 setAllianceLeaderboard(lbRes.data.alliance);
             } catch (err) {
@@ -77,26 +101,32 @@ const GameHub: React.FC = () => {
             setQuestions(response.data);
             setActiveStage(stageId);
             setResult(null);
-            setAnswers({});
+            setSelectedAnswers({});
         } catch (err) {
             console.error(err);
         }
     };
 
     const handleOptionChange = (questionId: number, answerId: number) => {
-        setAnswers(prev => ({ ...prev, [questionId]: answerId }));
+        const question = questions.find(q => q.id === questionId);
+        if (question?.hasAnswered) return; // Không cho phép chọn lại nếu đã trả lời
+
+        setSelectedAnswers(prev => ({ ...prev, [questionId]: answerId }));
     };
 
     const handleSubmit = async (questionId: number) => {
-        if (!answers[questionId]) return;
+        if (!selectedAnswers[questionId]) return;
         try {
             const response = await api.post('/quiz/submit', {
                 stageId: activeStage,
                 questionId: questionId,
-                answerId: answers[questionId]
+                answerId: selectedAnswers[questionId]
             });
             setResult(response.data.message);
             
+            // Lấy trạng thái đúng/sai từ API response (Backend đã trả về isCorrect)
+            const isCorrect = response.data.isCorrect;
+
             // Refresh profile and leaderboard
             const [profileRes, lbRes] = await Promise.all([
                 api.get('/user/profile'),
@@ -106,8 +136,28 @@ const GameHub: React.FC = () => {
             setIndividualLeaderboard(lbRes.data.individual);
             setAllianceLeaderboard(lbRes.data.alliance);
 
-        } catch (err) {
-            console.error(err);
+            // Cập nhật state nội bộ ngay lập tức để UI phản hồi không bị giật
+            setQuestions(prev => prev.map(q => {
+                if (q.id === questionId) {
+                    return {
+                        ...q,
+                        hasAnswered: true,
+                        isCorrect,
+                        selectedAnswerId: selectedAnswers[questionId],
+                        correctAnswerId: response.data.correctAnswerId
+                    };
+                }
+                return q;
+            }));
+
+            // Clear selected answer for that question
+            setSelectedAnswers(prev => {
+                const newState = { ...prev };
+                delete newState[questionId];
+                return newState;
+            });
+        } catch (err: any) {
+            setResult(err.response?.data?.message || 'Có lỗi xảy ra!');
         }
     };
 
@@ -219,12 +269,17 @@ const GameHub: React.FC = () => {
                                 {stages.map(stage => (
                                     <div 
                                         key={stage.id} 
-                                        className={`p-4 rounded-lg shadow cursor-pointer transition ${activeStage === stage.id ? 'ring-2 ring-blue-500' : ''}`}
+                                        className={`p-4 rounded-lg shadow transition relative ${activeStage === stage.id ? 'ring-2 ring-blue-500' : ''} ${stage.isUnlocked ? 'cursor-pointer hover:shadow-md' : 'cursor-not-allowed opacity-70'}`}
                                         style={{ backgroundColor: stage.isUnlocked ? '#00AEEF' : '#F4F4F4', color: stage.isUnlocked ? 'white' : '#666' }}
-                                        onClick={() => handleSelectStage(stage.id)}
+                                        onClick={() => stage.isUnlocked && handleSelectStage(stage.id)}
                                     >
-                                        <h4 className="font-bold">{stage.name}</h4>
-                                        {!stage.isUnlocked && <span className="text-xs">(Chưa mở)</span>}
+                                        <h4 className="font-bold pr-6">{stage.name}</h4>
+                                        {!stage.isUnlocked && <span className="text-xs block mt-1">(Chưa mở)</span>}
+                                        {stage.isCompleted && (
+                                            <div className="absolute top-2 right-2 text-yellow-300 text-xl" title="Đã hoàn thành">
+                                                🏆
+                                            </div>
+                                        )}
                                     </div>
                                 ))}
                             </div>
@@ -233,41 +288,110 @@ const GameHub: React.FC = () => {
                         {/* Questions */}
                         {activeStage && (
                             <div className="bg-white p-6 rounded-lg shadow-md border-t-4" style={{ borderColor: '#00AEEF' }}>
-                                <h3 className="text-2xl font-bold mb-4">Nhiệm vụ chặng</h3>
+                                <div className="flex justify-between items-center mb-6">
+                                    <h3 className="text-2xl font-bold">Nhiệm vụ chặng</h3>
+                                    <div className="hidden md:flex gap-2">
+                                        <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-semibold">🌟 CMCTS 20 Năm</span>
+                                        <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-semibold">Tự hào kiến tạo</span>
+                                    </div>
+                                </div>
+                                
                                 {result && (
-                                    <div className="mb-4 p-4 rounded bg-blue-50 text-blue-800 font-bold border border-blue-200">
-                                        {result}
+                                    <div className="mb-6 p-4 rounded bg-blue-50 text-blue-800 font-bold border border-blue-200 flex items-center gap-3">
+                                        <span className="text-2xl">🎉</span> {result}
                                     </div>
                                 )}
+                                
                                 {questions.length === 0 ? (
-                                    <p className="text-gray-500">Hiện tại chưa có câu hỏi nào cho chặng này.</p>
+                                    <div className="text-center py-8">
+                                        <img src="https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=A%20futuristic%20technology%20company%20anniversary%20celebration%20with%20number%2020%2C%20blue%20color%20theme%2C%20flat%20illustration&image_size=landscape_16_9" alt="CMCTS 20 Years" className="w-full max-w-md mx-auto rounded-lg mb-4 opacity-80" />
+                                        <p className="text-gray-500">Hiện tại chưa có câu hỏi nào cho chặng này. Hãy quay lại sau nhé!</p>
+                                    </div>
                                 ) : (
-                                    <div className="space-y-6">
+                                    <div className="space-y-8">
                                         {questions.map(q => (
-                                            <div key={q.id} className="border p-4 rounded-lg">
-                                                <p className="font-semibold mb-3">{q.content}</p>
-                                                <div className="space-y-2">
-                                                    {q.options.map(opt => (
-                                                        <label key={opt.id} className="flex items-center space-x-3 cursor-pointer p-2 hover:bg-gray-50 rounded">
-                                                            <input 
-                                                                type="radio" 
-                                                                name={`question-${q.id}`} 
-                                                                value={opt.id}
-                                                                checked={answers[q.id] === opt.id}
-                                                                onChange={() => handleOptionChange(q.id, opt.id)}
-                                                                className="form-radio h-4 w-4 text-blue-600"
-                                                            />
-                                                            <span>{opt.content}</span>
-                                                        </label>
-                                                    ))}
+                                            <div key={q.id} className={`border-2 p-6 rounded-xl transition-all ${q.hasAnswered ? (q.isCorrect ? 'border-green-300 bg-green-50' : 'border-red-300 bg-red-50') : 'border-gray-200 hover:border-blue-400'}`}>
+                                                <div className="flex flex-col md:flex-row gap-6">
+                                                    {/* Hình ảnh minh họa random cho sinh động */}
+                                                    <div className="w-full md:w-1/3 shrink-0">
+                                                        <img 
+                                                            src={`https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=Technology%20company%20puzzle%20question%20illustration%20for%20number%20${q.id}%2C%20blue%20and%20cyan%20theme%2C%20modern%20corporate&image_size=landscape_4_3`} 
+                                                            alt="Question illustration" 
+                                                            className="w-full h-32 object-cover rounded-lg shadow-sm"
+                                                        />
+                                                    </div>
+                                                    
+                                                    <div className="flex-1">
+                                                        <p className="font-bold text-lg mb-4 text-gray-800">{q.content}</p>
+                                                        
+                                                        <div className="space-y-3">
+                                                            {q.options.map(opt => {
+                                                                // Logic hiển thị trạng thái đáp án
+                                                                const isSelected = selectedAnswers[q.id] === opt.id || q.selectedAnswerId === opt.id;
+                                                                let optionClass = "border border-gray-300 hover:bg-blue-50";
+                                                                
+                                                                if (q.hasAnswered) {
+                                                                    // Nếu câu hỏi đã trả lời, đáp án ĐÚNG luôn được highlight màu xanh (bất kể user có chọn hay không)
+                                                                    const isCorrectOption = opt.id === q.correctAnswerId;
+                                                                    
+                                                                    if (isCorrectOption) {
+                                                                        optionClass = "bg-green-500 text-white font-bold border-green-600";
+                                                                    } else if (isSelected && !q.isCorrect) {
+                                                                        // Nếu user chọn sai, bôi đỏ đáp án đã chọn
+                                                                        optionClass = "bg-red-500 text-white font-bold border-red-600";
+                                                                    } else {
+                                                                        // Các đáp án khác làm mờ
+                                                                        optionClass = "bg-gray-100 text-gray-400 border-gray-200 opacity-60";
+                                                                    }
+                                                                } else if (isSelected) {
+                                                                    optionClass = "border-blue-500 bg-blue-50 ring-1 ring-blue-500";
+                                                                }
+
+                                                                return (
+                                                                    <label key={opt.id} className={`flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition-colors ${optionClass} ${q.hasAnswered ? 'cursor-not-allowed' : ''}`}>
+                                                                        <input 
+                                                                            type="radio" 
+                                                                            name={`question-${q.id}`} 
+                                                                            value={opt.id}
+                                                                            checked={isSelected}
+                                                                            onChange={() => handleOptionChange(q.id, opt.id)}
+                                                                            disabled={q.hasAnswered}
+                                                                            className={`form-radio h-5 w-5 ${q.hasAnswered ? ((isSelected || opt.id === q.correctAnswerId) ? 'text-white' : 'text-gray-400') : 'text-blue-600'}`}
+                                                                        />
+                                                                        <span className="flex-1">{opt.content}</span>
+                                                                        {q.hasAnswered && opt.id === q.correctAnswerId && (
+                                                                            <span className="text-xl">✅</span>
+                                                                        )}
+                                                                        {q.hasAnswered && isSelected && !q.isCorrect && (
+                                                                            <span className="text-xl">❌</span>
+                                                                        )}
+                                                                    </label>
+                                                                );
+                                                            })}
+                                                        </div>
+
+                                                        {!q.hasAnswered && (
+                                                            <button 
+                                                                onClick={() => handleSubmit(q.id)}
+                                                                disabled={!selectedAnswers[q.id] || q.hasAnswered}
+                                                            className={`mt-6 px-8 py-3 rounded-lg font-bold transition-all shadow-md w-full md:w-auto ${
+                                                                q.hasAnswered 
+                                                                    ? 'bg-gray-400 text-white cursor-not-allowed hidden' 
+                                                                    : selectedAnswers[q.id] 
+                                                                        ? 'bg-blue-600 hover:bg-blue-700 text-white hover:shadow-lg transform hover:-translate-y-0.5' 
+                                                                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                                            }`}
+                                                            >
+                                                                Xác nhận đáp án
+                                                            </button>
+                                                        )}
+                                                        {q.hasAnswered && (
+                                                            <div className={`mt-4 font-bold text-sm ${q.isCorrect ? 'text-green-600' : 'text-red-600'}`}>
+                                                                {q.isCorrect ? 'Bạn đã trả lời ĐÚNG câu hỏi này!' : 'Bạn đã trả lời SAI câu hỏi này.'}
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                                <button 
-                                                    onClick={() => handleSubmit(q.id)}
-                                                    className="mt-4 px-6 py-2 text-white rounded font-semibold transition hover:opacity-90"
-                                                    style={{ backgroundColor: '#0065B2' }}
-                                                >
-                                                    Gửi đáp án
-                                                </button>
                                             </div>
                                         ))}
                                     </div>
