@@ -1,7 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { Shield, Zap, Rocket, Users, Target, Award, ArrowRight } from 'lucide-react';
+import { Shield, Zap, Rocket, ArrowRight, Gamepad2 } from 'lucide-react';
+
+import logo from '../assets/images/CTS20-Logo-08.png';
+import heroBg from '../assets/images/Hero-section_background-01.png';
 
 const Home: React.FC = () => {
     const { scrollYProgress } = useScroll();
@@ -9,95 +12,114 @@ const Home: React.FC = () => {
     const opacity = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
 
     return (
-        <div className="min-h-screen bg-cmc-gray overflow-hidden">
+        <div className="min-h-screen bg-cmc-gray overflow-hidden font-sans">
             {/* Navbar */}
-            <header className="fixed top-0 w-full z-50 bg-white/90 backdrop-blur-md shadow-sm">
-                <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+            <header className="absolute top-0 w-full z-50 bg-transparent">
+                <div className="container mx-auto px-4 py-6 flex justify-between items-center">
                     <motion.div 
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className="flex items-center gap-2"
+                        className="flex items-center"
                     >
-                        <div className="w-10 h-10 bg-cmc-blue rounded-lg flex items-center justify-center text-white font-bold text-xl">
-                            20
-                        </div>
-                        <h1 className="text-2xl font-bold text-cmc-blue">CMC TS</h1>
+                        <img src={logo} alt="CMC TS 20 WE TRANSFORM" className="h-10 md:h-14 object-contain" />
                     </motion.div>
-                    <nav>
-                        <Link 
-                            to="/login" 
-                            className="bg-cmc-blue text-white hover:bg-cmc-sky transition-colors px-6 py-2 rounded-full font-semibold"
-                        >
-                            Đăng nhập
-                        </Link>
+                    <nav className="hidden lg:flex items-center gap-8">
+                        <Link to="/" className="text-white text-sm font-semibold relative after:content-[''] after:absolute after:-bottom-2 after:left-0 after:w-full after:h-[2px] after:bg-[#00ffff]">Trang chủ</Link>
+                        <Link to="/" className="text-white/80 hover:text-white text-sm font-semibold transition-colors">DI SẢN 20 NĂM</Link>
+                        <Link to="/" className="text-white/80 hover:text-white text-sm font-semibold transition-colors">IN</Link>
+                        <Link to="/" className="text-white/80 hover:text-white text-sm font-semibold transition-colors">TRUST</Link>
+                        <Link to="/" className="text-white/80 hover:text-white text-sm font-semibold transition-colors">WE TRANSFORM</Link>
                     </nav>
+                    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
+                        <Link 
+                            to="/gamehub" 
+                            className="bg-gradient-to-r from-[#00ffff] to-[#d946ef] text-white px-6 py-2.5 rounded-full font-semibold hover:shadow-lg hover:shadow-[#00ffff]/30 transition-all text-sm inline-block"
+                        >
+                            Vào GameHub
+                        </Link>
+                    </motion.div>
                 </div>
             </header>
 
-            {/* Hero Section with Parallax */}
-            <section className="relative h-screen flex items-center justify-center overflow-hidden">
-                {/* Background Pattern */}
+            {/* Hero Section */}
+            <section className="relative min-h-screen flex flex-col justify-between overflow-hidden bg-[#001253] pt-32 pb-20">
+                {/* Background Image */}
                 <motion.div 
                     style={{ y: heroY, opacity }}
-                    className="absolute inset-0 z-0 opacity-10"
+                    className="absolute inset-0 z-0"
                 >
-                    <div className="absolute inset-0 bg-[url('https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=abstract%20digital%20technology%20waves%20blue%20background%203d&image_size=landscape_16_9')] bg-cover bg-center" />
+                    <div 
+                        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+                        style={{ backgroundImage: `url(${heroBg})` }}
+                    />
                 </motion.div>
                 
-                <div className="absolute inset-0 bg-gradient-to-b from-cmc-blue/10 to-cmc-gray z-10" />
-
-                <div className="container mx-auto px-4 z-20 text-center">
+                {/* Hero Content */}
+                <div className="container mx-auto px-4 z-20 text-center flex-1 flex flex-col justify-center mt-10 md:mt-0">
                     <motion.div
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8, delay: 0.2 }}
                     >
-                        <span className="text-cmc-sky font-bold tracking-wider uppercase mb-4 block">
-                            Kỷ niệm 20 năm thành lập
-                        </span>
-                        <h2 className="text-5xl md:text-7xl font-extrabold mb-6 text-cmc-blue">
-                            Kiến tạo Tương lai số
+                        <h2 className="text-4xl md:text-6xl lg:text-7xl font-extrabold mb-6 text-white uppercase leading-tight tracking-wide">
+                            IN 20 YEARS OF TRUST<br/>
+                            WE TRANSFORM
                         </h2>
-                        <p className="text-xl md:text-2xl text-gray-600 mb-10 max-w-3xl mx-auto">
-                            Hành trình 20 năm dẫn đầu thị trường chuyển đổi số, kết nối công nghệ và con người, vươn tầm quốc tế.
+                        <p className="text-base md:text-xl text-white/90 mb-12 max-w-2xl mx-auto font-light leading-relaxed">
+                            Trust is our Operating System.<br/>
+                            When Trust runs strong, everything moves faster.
                         </p>
-                        <motion.div
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            className="inline-block"
-                        >
-                            <Link 
-                                to="/login" 
-                                className="inline-flex items-center gap-2 px-8 py-4 text-lg font-bold text-white rounded-full bg-gradient-to-r from-cmc-blue to-cmc-sky shadow-lg hover:shadow-xl transition-all"
-                            >
-                                Bắt đầu hành trình <ArrowRight size={20} />
-                            </Link>
-                        </motion.div>
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+                            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                                <Link 
+                                    to="/journey" 
+                                    className="inline-flex items-center justify-center w-full sm:w-auto gap-3 px-8 py-4 text-base font-bold text-[#001253] bg-white rounded-full hover:bg-gray-50 transition-all shadow-lg"
+                                >
+                                    Khám phá hành trình
+                                    <div className="w-6 h-6 bg-[#001253] rounded-full flex items-center justify-center ml-2">
+                                        <ArrowRight size={14} className="text-white" />
+                                    </div>
+                                </Link>
+                            </motion.div>
+                            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                                <Link 
+                                    to="/mission" 
+                                    className="inline-flex items-center justify-center w-full sm:w-auto gap-3 px-8 py-4 text-base font-bold text-white bg-gradient-to-r from-[#00ffff] to-[#ff00ff] rounded-full hover:shadow-lg hover:shadow-[#ff00ff]/30 transition-all shadow-lg"
+                                >
+                                    <Gamepad2 size={20} />
+                                    Bắt đầu Mission ngay
+                                </Link>
+                            </motion.div>
+                        </div>
                     </motion.div>
                 </div>
-            </section>
 
-            {/* Numbers Section */}
-            <section className="py-20 bg-white relative z-20">
-                <div className="container mx-auto px-4">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                {/* Stats Cards */}
+                <div className="container mx-auto px-4 z-20 mt-16 lg:mt-24">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
                         {[
-                            { number: "30", label: "Năm lịch sử Tập đoàn CMC", icon: Award },
-                            { number: "20", label: "Năm thành lập CMC TS", icon: Target },
-                            { number: "10.000+", label: "Khách hàng", icon: Users },
-                            { number: "100+", label: "Đối tác chiến lược", icon: Rocket }
+                            { number: "700+", lines: ["CTS Members", "đang viết tiếp", "hành trình niềm tin"] },
+                            { number: "2,400+", lines: ["My CTS Moments", "được chia sẻ"] },
+                            { number: "6", lines: ["Alliance", "được", "hình thành"] },
+                            { number: "5,600+", lines: ["Lượt tương tác"] }
                         ].map((stat, index) => (
                             <motion.div 
                                 key={index}
                                 initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true, margin: "-100px" }}
-                                transition={{ delay: index * 0.1 }}
-                                className="p-8 rounded-2xl bg-cmc-gray/50 text-center hover:bg-cmc-gray transition-colors border border-gray-100"
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.4 + index * 0.1 }}
+                                className="relative p-6 lg:p-8 rounded-2xl bg-[#003399]/30 backdrop-blur-md border border-white/10 text-center flex flex-col justify-center min-h-[200px] hover:bg-[#003399]/40 transition-colors"
                             >
-                                <stat.icon className="w-12 h-12 text-cmc-sky mx-auto mb-4" />
-                                <h3 className="text-4xl font-black text-cmc-blue mb-2">{stat.number}</h3>
-                                <p className="text-gray-600 font-medium">{stat.label}</p>
+                                {/* Cyan corner tab */}
+                                <div className="absolute -top-3 -right-3 w-10 h-10">
+                                    <div className="absolute top-0 right-0 w-10 h-3 bg-[#00ffff] rounded-tr-xl" />
+                                    <div className="absolute top-0 right-0 w-3 h-10 bg-[#00ffff] rounded-tr-xl" />
+                                </div>
+                                
+                                <h3 className="text-4xl lg:text-5xl font-black text-[#00ffff] mb-4 tracking-tight">{stat.number}</h3>
+                                <div className="text-white/90 text-sm lg:text-base leading-relaxed font-medium">
+                                    {stat.lines.map((line, i) => <div key={i}>{line}</div>)}
+                                </div>
                             </motion.div>
                         ))}
                     </div>
