@@ -19,6 +19,9 @@ const Home: React.FC = () => {
     // Lắng nghe thay đổi từ localStorage để cập nhật UI nếu cần
     const [hasUploadedImage, setHasUploadedImage] = useState(false);
 
+    // Event Stages State
+    const [eventStages, setEventStages] = useState<any[]>([]);
+
     // Slides State
     const [currentSlide, setCurrentSlide] = useState(0);
     const [slides, setSlides] = useState<string[]>([
@@ -30,8 +33,8 @@ const Home: React.FC = () => {
         "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=Teamwork%20success%20celebration%20office%20environment&image_size=landscape_16_9"
     ]);
 
-    // Load images from API
-    const loadImages = async () => {
+    // Load images and stages from API
+    const loadData = async () => {
         try {
             const apiImages = await getImages();
             if (apiImages && apiImages.length > 0) {
@@ -47,18 +50,31 @@ const Home: React.FC = () => {
                 setSlides(prev => [savedImage, ...prev.slice(1)]);
             }
         }
+
+        try {
+            // Fetch stages without needing token by calling a public endpoint or handling 401 gracefully
+            // Assuming /api/quiz/stages is accessible or we create a public endpoint. 
+            // For now, let's use the existing api utility but catch errors if unauthenticated.
+            const { default: api } = await import('../utils/api');
+            const stagesRes = await api.get('/quiz/stages');
+            if (stagesRes.data) {
+                setEventStages(stagesRes.data);
+            }
+        } catch (error) {
+            console.error("Lỗi khi load event stages:", error);
+        }
     };
 
     useEffect(() => {
-        loadImages();
+        loadData();
         
         // Cập nhật lại khi có sự thay đổi từ upload (thông qua localStorage event hoặc polling)
         const handleStorageChange = () => {
-            loadImages();
+            loadData();
         };
         
         window.addEventListener('storage', handleStorageChange);
-        const interval = setInterval(loadImages, 5000); // Poll API every 5s to sync
+        const interval = setInterval(loadData, 5000); // Poll API every 5s to sync
         
         return () => {
             window.removeEventListener('storage', handleStorageChange);
@@ -300,129 +316,81 @@ const Home: React.FC = () => {
                     </motion.div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 mb-12">
-                        {/* ACT 1 */}
-                        <motion.div 
-                            initial={{ opacity: 0, y: 30 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ delay: 0.1 }}
-                            className="bg-gradient-to-b from-[#000d6b] to-[#0005a3] rounded-[24px] p-8 text-white relative overflow-hidden group hover:shadow-2xl hover:-translate-y-2 transition-all duration-300"
-                        >
-                            <div className="absolute top-6 left-6">
-                                <span className="inline-block px-4 py-1.5 bg-white/20 backdrop-blur-sm text-white text-xs font-semibold rounded-full">
-                                    Đã kết thúc
-                                </span>
-                            </div>
+                        {eventStages && eventStages.length > 0 ? eventStages.map((stage, index) => {
+                            // Extract dates for display
+                            const startDate = new Date(stage.startTime);
+                            const endDate = new Date(stage.endTime);
+                            const timeString = `${startDate.getDate()}/${startDate.getMonth() + 1} - ${endDate.getDate()}/${endDate.getMonth() + 1}`;
                             
-                            <div className="mt-16 mb-4">
-                                <p className="text-white/60 text-sm font-semibold tracking-widest mb-1">ACT 1</p>
-                                <h3 className="text-3xl font-bold tracking-wide">BUILD TRUST</h3>
-                                <p className="text-white/80 mt-2 text-sm font-medium">10/4 - 30/5</p>
-                            </div>
-                            
-                            <div className="space-y-4 text-sm leading-relaxed text-white/90 min-h-[120px]">
-                                <p>
-                                    Hình thành Liên quân.<br/>
-                                    Tập trung vào những quyết định chiến lược <strong>khác biệt.</strong>
-                                </p>
-                                <p>Chia sẻ và kết nối người CTS.</p>
-                            </div>
-                            
-                            <div className="mt-8 pt-6 border-t border-white/10">
-                                <Link to="#" className="inline-flex items-center gap-2 text-sm font-medium hover:text-[#00ffff] transition-colors group-hover:gap-3">
-                                    Xem recap
-                                    <span className="flex">
-                                        <ArrowRight size={14} className="opacity-50" />
-                                        <ArrowRight size={14} className="opacity-75 -ml-1" />
-                                        <ArrowRight size={14} className="-ml-1" />
-                                    </span>
-                                </Link>
-                            </div>
-                        </motion.div>
+                            // Determine styles based on status
+                            const isEnded = stage.status === "Đã kết thúc";
+                            const isActive = stage.status === "Đang diễn ra";
+                            const isUpcoming = stage.status === "Sắp diễn ra";
 
-                        {/* ACT 2 */}
-                        <motion.div 
-                            initial={{ opacity: 0, y: 30 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ delay: 0.2 }}
-                            className="bg-gradient-to-b from-[#0033ff] to-[#001ae6] rounded-[24px] p-8 text-white relative overflow-hidden group hover:shadow-2xl hover:shadow-[#00ffff]/20 hover:-translate-y-2 transition-all duration-300 transform scale-105 z-10"
-                        >
-                            {/* Glow effect for active card */}
-                            <div className="absolute -top-20 -right-20 w-40 h-40 bg-[#00ffff]/30 blur-3xl rounded-full" />
-                            <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-[#ff00ff]/30 blur-3xl rounded-full" />
+                            return (
+                                <motion.div 
+                                    key={stage.id}
+                                    initial={{ opacity: 0, y: 30 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ delay: 0.1 + (index * 0.1) }}
+                                    className={`bg-gradient-to-b ${isActive ? 'from-[#0033ff] to-[#001ae6] transform scale-105 z-10 hover:shadow-[#00ffff]/20' : 'from-[#000d6b] to-[#0005a3]'} rounded-[24px] p-8 text-white relative overflow-hidden group hover:shadow-2xl hover:-translate-y-2 transition-all duration-300`}
+                                >
+                                    {isActive && (
+                                        <>
+                                            {/* Glow effect for active card */}
+                                            <div className="absolute -top-20 -right-20 w-40 h-40 bg-[#00ffff]/30 blur-3xl rounded-full" />
+                                            <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-[#ff00ff]/30 blur-3xl rounded-full" />
+                                        </>
+                                    )}
 
-                            <div className="absolute top-6 left-6 z-20">
-                                <span className="inline-block px-4 py-1.5 bg-gradient-to-r from-[#00ffff] to-[#ff00ff] text-white text-xs font-bold rounded-full shadow-[0_0_15px_rgba(0,255,255,0.5)]">
-                                    Đang diễn ra
-                                </span>
-                            </div>
-                            
-                            <div className="mt-16 mb-4 relative z-20">
-                                <p className="text-white/80 text-sm font-semibold tracking-widest mb-1">ACT 2</p>
-                                <h3 className="text-3xl font-bold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-white to-white">ACT FASTER</h3>
-                                <p className="text-[#00ffff] mt-2 text-sm font-bold">17/4 - 1/7</p>
-                            </div>
-                            
-                            <div className="space-y-4 text-sm leading-relaxed text-white min-h-[120px] relative z-20">
-                                <p>
-                                    Chuyển hóa niềm tin thành hành động.<br/>
-                                    <strong>Nhanh hơn</strong>, quyết liệt hơn.
-                                </p>
-                                <p>Thể thao, sân khấu, sáng tạo.</p>
-                            </div>
-                            
-                            <div className="mt-8 pt-6 border-t border-white/20 relative z-20">
-                                <Link to="#" className="inline-flex items-center gap-2 text-sm font-bold text-[#00ffff] hover:text-white transition-colors group-hover:gap-3">
-                                    Tham gia ngay
-                                    <span className="flex">
-                                        <ArrowRight size={14} className="opacity-50" />
-                                        <ArrowRight size={14} className="opacity-75 -ml-1" />
-                                        <ArrowRight size={14} className="-ml-1" />
-                                    </span>
-                                </Link>
-                            </div>
-                        </motion.div>
-
-                        {/* ACT 3 */}
-                        <motion.div 
-                            initial={{ opacity: 0, y: 30 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ delay: 0.3 }}
-                            className="bg-gradient-to-b from-[#000d6b] to-[#0005a3] rounded-[24px] p-8 text-white relative overflow-hidden group hover:shadow-2xl hover:-translate-y-2 transition-all duration-300"
-                        >
-                            <div className="absolute top-6 left-6">
-                                <span className="inline-block px-4 py-1.5 bg-white/10 backdrop-blur-sm text-white/70 text-xs font-semibold rounded-full border border-white/20">
-                                    Sắp diễn ra
-                                </span>
-                            </div>
-                            
-                            <div className="mt-16 mb-4">
-                                <p className="text-white/50 text-sm font-semibold tracking-widest mb-1">ACT 3</p>
-                                <h3 className="text-3xl font-bold tracking-wide text-white/90">BREAKTHROUGH</h3>
-                                <p className="text-white/60 mt-2 text-sm font-medium">1/8 - 30/9</p>
-                            </div>
-                            
-                            <div className="space-y-4 text-sm leading-relaxed text-white/70 min-h-[120px]">
-                                <p>
-                                    Kết quả thực chất.<br/>
-                                    <strong>Đột phá</strong> đến những ý tưởng và sáng kiến mới.
-                                </p>
-                                <p>Innovation Hackathon.</p>
-                            </div>
-                            
-                            <div className="mt-8 pt-6 border-t border-white/10">
-                                <span className="inline-flex items-center gap-2 text-sm font-medium text-white/40">
-                                    Đang chờ mở khóa
-                                    <span className="flex">
-                                        <ArrowRight size={14} className="opacity-30" />
-                                        <ArrowRight size={14} className="opacity-50 -ml-1" />
-                                        <ArrowRight size={14} className="opacity-70 -ml-1" />
-                                    </span>
-                                </span>
-                            </div>
-                        </motion.div>
+                                    <div className={`absolute top-6 left-6 ${isActive ? 'z-20' : ''}`}>
+                                        <span className={`inline-block px-4 py-1.5 text-xs font-bold rounded-full ${
+                                            isActive 
+                                                ? 'bg-gradient-to-r from-[#00ffff] to-[#ff00ff] text-white shadow-[0_0_15px_rgba(0,255,255,0.5)]' 
+                                                : isUpcoming
+                                                    ? 'bg-white/10 backdrop-blur-sm text-white/70 border border-white/20'
+                                                    : 'bg-white/20 backdrop-blur-sm text-white font-semibold'
+                                        }`}>
+                                            {stage.status}
+                                        </span>
+                                    </div>
+                                    
+                                    <div className={`mt-16 mb-4 ${isActive ? 'relative z-20' : ''}`}>
+                                        <p className={`text-sm font-semibold tracking-widest mb-1 ${isActive ? 'text-white/80' : isUpcoming ? 'text-white/50' : 'text-white/60'}`}>ACT {index + 1}</p>
+                                        <h3 className={`text-3xl font-bold tracking-wide ${isActive ? 'text-transparent bg-clip-text bg-gradient-to-r from-white to-white' : isUpcoming ? 'text-white/90' : ''}`}>{stage.name}</h3>
+                                        <p className={`mt-2 text-sm ${isActive ? 'text-[#00ffff] font-bold' : isUpcoming ? 'text-white/60 font-medium' : 'text-white/80 font-medium'}`}>{timeString}</p>
+                                    </div>
+                                    
+                                    <div className={`space-y-4 text-sm leading-relaxed min-h-[120px] ${isActive ? 'text-white relative z-20' : isUpcoming ? 'text-white/70' : 'text-white/90'}`} dangerouslySetInnerHTML={{ __html: stage.description }}>
+                                    </div>
+                                    
+                                    <div className={`mt-8 pt-6 border-t ${isActive ? 'border-white/20 relative z-20' : 'border-white/10'}`}>
+                                        {isUpcoming ? (
+                                            <span className="inline-flex items-center gap-2 text-sm font-medium text-white/40">
+                                                Đang chờ mở khóa
+                                                <span className="flex">
+                                                    <ArrowRight size={14} className="opacity-30" />
+                                                    <ArrowRight size={14} className="opacity-50 -ml-1" />
+                                                    <ArrowRight size={14} className="opacity-70 -ml-1" />
+                                                </span>
+                                            </span>
+                                        ) : (
+                                            <Link to="/gamehub" className={`inline-flex items-center gap-2 text-sm transition-colors group-hover:gap-3 ${isActive ? 'font-bold text-[#00ffff] hover:text-white' : 'font-medium hover:text-[#00ffff]'}`}>
+                                                {isActive ? 'Tham gia ngay' : 'Xem recap'}
+                                                <span className="flex">
+                                                    <ArrowRight size={14} className="opacity-50" />
+                                                    <ArrowRight size={14} className="opacity-75 -ml-1" />
+                                                    <ArrowRight size={14} className="-ml-1" />
+                                                </span>
+                                            </Link>
+                                        )}
+                                    </div>
+                                </motion.div>
+                            );
+                        }) : (
+                            <div className="col-span-3 text-center text-gray-500 py-10">Đang tải dữ liệu sự kiện...</div>
+                        )}
                     </div>
 
                     <div className="text-center mt-12">

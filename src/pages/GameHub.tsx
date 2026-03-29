@@ -271,7 +271,7 @@ const GameHub: React.FC = () => {
                         {/* Journey Map */}
                         <div className="bg-white p-6 rounded-lg shadow-md">
                             <h3 className="text-xl font-bold mb-4">Lộ trình sự kiện</h3>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 {stages.map(stage => (
                                     <div 
                                         key={stage.id} 

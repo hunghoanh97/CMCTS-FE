@@ -16,6 +16,11 @@ api.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error.response && error.response.status === 401) {
+            // Không redirect nếu request là lấy danh sách stages cho landing page
+            if (error.config.url === '/quiz/stages') {
+                return Promise.reject(error);
+            }
+            
             // Xóa token và redirect về trang login nếu lỗi 401 Unauthorized
             localStorage.removeItem('token');
             window.location.href = '/login';
