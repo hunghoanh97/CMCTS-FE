@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import { Shield, Zap, Rocket, ArrowRight, Gamepad2, Menu, X } from 'lucide-react';
 import AdminImageUpload from '../components/AdminImageUpload';
+import MyCTSMoment from '../components/MyCTSMoment';
+import RoleSection from '../components/RoleSection';
 import { getImages } from '../services/api';
 
 import logo from '../assets/images/CTS20-Logo-08.png';
@@ -147,7 +149,7 @@ const Home: React.FC = () => {
                     </nav>
                     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
                         <Link 
-                            to="/gamehub" 
+                            to="/login" 
                             className="bg-gradient-to-r from-[#00ffff] to-[#d946ef] text-white px-6 py-2.5 rounded-full font-semibold hover:shadow-lg hover:shadow-[#00ffff]/30 transition-all text-sm inline-block"
                         >
                             Vào GameHub
@@ -198,7 +200,7 @@ const Home: React.FC = () => {
                             </motion.div>
                             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                                 <Link 
-                                    to="/mission" 
+                                    to="/login" 
                                     className="inline-flex items-center justify-center w-full sm:w-auto gap-3 px-8 py-4 text-base font-bold text-white bg-gradient-to-r from-[#00ffff] to-[#ff00ff] rounded-full hover:shadow-lg hover:shadow-[#ff00ff]/30 transition-all shadow-lg"
                                 >
                                     <Gamepad2 size={20} />
@@ -410,15 +412,23 @@ const Home: React.FC = () => {
                 </div>
             </section>
 
+            {/* My CTS Moment Section */}
+            <MyCTSMoment />
+
+            {/* Role Section */}
+            <RoleSection />
+
             {/* Footer */}
-            <footer className="bg-cmc-blue text-white py-12 text-center">
-                <div className="container mx-auto px-4">
-                    <div className="mb-6">
-                        <h2 className="text-2xl font-bold mb-2">Tổng Công ty Công nghệ và Giải pháp CMC</h2>
-                        <p className="text-blue-200">Sẵn sàng đồng hành cùng bạn trên hành trình chuyển đổi số</p>
-                    </div>
-                    <div className="border-t border-blue-400/30 pt-6 mt-6">
-                        <p className="text-blue-200 text-sm">© 2024 CMC TS. All rights reserved.</p>
+            <footer className="bg-cmc-gray pb-12 pt-6 text-center">
+                <div className="container mx-auto px-4 max-w-5xl">
+                    <div className="border-t border-[#001253]/10 pt-8 mt-6 flex flex-col md:flex-row justify-between items-center gap-4">
+                        <div className="text-left">
+                            <h2 className="text-[16px] font-bold text-[#001253] mb-1">Tổng Công ty Công nghệ và Giải pháp CMC</h2>
+                            <p className="text-[#001253]/70 text-[14px]">Sẵn sàng đồng hành cùng bạn trên hành trình chuyển đổi số</p>
+                        </div>
+                        <div>
+                            <p className="text-[#001253]/50 text-sm">© 2024 CMC TS. All rights reserved.</p>
+                        </div>
                     </div>
                 </div>
             </footer>

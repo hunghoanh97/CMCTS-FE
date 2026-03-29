@@ -7,11 +7,20 @@ export default {
   theme: {
     extend: {
       colors: {
-        'cmc-blue': '#0065B2',
-        'cmc-sky': '#00AEEF',
-        'cmc-gray': '#F4F4F4',
+        'cmc-blue': '#001253',
+        'cmc-sky': '#00B4D8',
+        'cmc-gray': '#F5F5F5',
       }
     },
   },
-  plugins: [],
+  plugins: [
+    function({ addUtilities }) {
+      addUtilities({
+        '.mask-composite-exclude': {
+          '-webkit-mask-composite': 'source-out',
+          'mask-composite': 'exclude',
+        }
+      })
+    }
+  ],
 }
