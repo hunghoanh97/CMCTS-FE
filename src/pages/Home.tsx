@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, useScroll, useTransform } from 'framer-motion';
-import { Shield, Zap, Rocket, ArrowRight, Gamepad2 } from 'lucide-react';
+import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
+import { Shield, Zap, Rocket, ArrowRight, Gamepad2, Menu, X } from 'lucide-react';
+import AdminImageUpload from '../components/AdminImageUpload';
+import { getImages } from '../services/api';
 
 import logo from '../assets/images/CTS20-Logo-08.png';
 import heroBg from '../assets/images/Hero-section_background-01.png';
@@ -11,8 +13,105 @@ const Home: React.FC = () => {
     const heroY = useTransform(scrollYProgress, [0, 1], ['0%', '50%']);
     const opacity = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
 
+    // Sidebar state
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+    // Lắng nghe thay đổi từ localStorage để cập nhật UI nếu cần
+    const [hasUploadedImage, setHasUploadedImage] = useState(false);
+
+    // Slides State
+    const [currentSlide, setCurrentSlide] = useState(0);
+    const [slides, setSlides] = useState<string[]>([
+        "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=Corporate%20team%20celebration%20with%20blue%20theme&image_size=landscape_16_9",
+        "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=Digital%20transformation%20technology%20abstract%20blue%20background&image_size=landscape_16_9",
+        "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=Business%20meeting%20handshake%20trust%20concept%20blue%20tone&image_size=landscape_16_9",
+        "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=Modern%20data%20center%20server%20room%20blue%20lighting&image_size=landscape_16_9",
+        "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=Future%20city%20smart%20technology%20blue%20cyan%20colors&image_size=landscape_16_9",
+        "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=Teamwork%20success%20celebration%20office%20environment&image_size=landscape_16_9"
+    ]);
+
+    // Load images from API
+    const loadImages = async () => {
+        try {
+            const apiImages = await getImages();
+            if (apiImages && apiImages.length > 0) {
+                setSlides(apiImages.map(img => img.url));
+                setHasUploadedImage(true);
+            }
+        } catch (error) {
+            console.error("Lỗi khi load ảnh từ API:", error);
+            // Fallback to localStorage logic if API fails
+            const savedImage = localStorage.getItem('admin_section_image');
+            if (savedImage) {
+                setHasUploadedImage(true);
+                setSlides(prev => [savedImage, ...prev.slice(1)]);
+            }
+        }
+    };
+
+    useEffect(() => {
+        loadImages();
+        
+        // Cập nhật lại khi có sự thay đổi từ upload (thông qua localStorage event hoặc polling)
+        const handleStorageChange = () => {
+            loadImages();
+        };
+        
+        window.addEventListener('storage', handleStorageChange);
+        const interval = setInterval(loadImages, 5000); // Poll API every 5s to sync
+        
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+            clearInterval(interval);
+        };
+    }, []);
+
     return (
-        <div className="min-h-screen bg-cmc-gray overflow-hidden font-sans">
+        <div className="min-h-screen bg-cmc-gray overflow-hidden font-sans relative">
+            {/* Admin Toggle Button */}
+            <button 
+                onClick={() => setIsSidebarOpen(true)}
+                className="fixed bottom-6 right-6 z-[60] bg-white p-3 rounded-full shadow-2xl text-cmc-blue hover:text-cmc-sky hover:scale-110 transition-all border border-gray-100"
+            >
+                <Menu size={24} />
+            </button>
+
+            {/* Admin Sidebar */}
+            <AnimatePresence>
+                {isSidebarOpen && (
+                    <>
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setIsSidebarOpen(false)}
+                            className="fixed inset-0 bg-black/50 z-[70] backdrop-blur-sm"
+                        />
+                        <motion.div
+                            initial={{ x: '100%' }}
+                            animate={{ x: 0 }}
+                            exit={{ x: '100%' }}
+                            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                            className="fixed top-0 right-0 w-full md:w-[400px] lg:w-[450px] h-full bg-gray-50 z-[80] shadow-2xl flex flex-col"
+                        >
+                            <div className="flex items-center justify-between p-6 border-b bg-white">
+                                <h2 className="text-xl font-bold text-cmc-blue">Quản lý hình ảnh</h2>
+                                <button 
+                                    onClick={() => setIsSidebarOpen(false)}
+                                    className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500 hover:text-red-500"
+                                >
+                                    <X size={20} />
+                                </button>
+                            </div>
+                            
+                            <div className="flex-1 overflow-y-auto p-6">
+                                <AdminImageUpload />
+                            </div>
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
+
             {/* Navbar */}
             <header className="absolute top-0 w-full z-50 bg-transparent">
                 <div className="container mx-auto px-4 py-6 flex justify-between items-center">
@@ -126,8 +225,8 @@ const Home: React.FC = () => {
                 </div>
             </section>
 
-            {/* Core Values Section */}
-            <section className="py-24 bg-cmc-gray relative z-20">
+            {/* Section 20 Năm */}
+            <section className="py-24 bg-[#0005a3] relative z-20">
                 <div className="container mx-auto px-4">
                     <motion.div 
                         initial={{ opacity: 0, y: 20 }}
@@ -135,47 +234,210 @@ const Home: React.FC = () => {
                         viewport={{ once: true, margin: "-100px" }}
                         className="text-center mb-16"
                     >
-                        <h2 className="text-4xl font-bold text-cmc-blue mb-4">Giá trị Cốt lõi</h2>
-                        <p className="text-xl text-gray-600">Kim chỉ nam cho mọi hoạt động và sự phát triển của CMC TS</p>
+                        <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6">20 năm xây dựng niềm tin</h2>
+                        <p className="text-lg md:text-xl text-white/90 max-w-4xl mx-auto leading-relaxed">
+                            Từ những dự án hạ tầng công nghệ đầu tiên, đến những bước chuyển mình chiến lược<br/>
+                            để trở thành Digital Transformation Partner.<br/>
+                            Niềm tin là cách CTS vận hành và đưa chúng ta đến ngày hôm nay.
+                        </p>
+                    </motion.div>
+                    {/* Carousel Area */}
+                    <div className="relative w-full max-w-6xl mx-auto rounded-xl overflow-hidden shadow-2xl h-[400px] md:h-[500px]">
+                        <div className="absolute inset-0 flex items-center justify-center bg-[#001253]">
+                            {/* Main Image based on current slide */}
+                            <img 
+                                src={slides[currentSlide]} 
+                                alt={`CMC TS 20 Years Slide ${currentSlide + 1}`} 
+                                className="w-full h-full object-cover transition-opacity duration-500"
+                            />
+                            
+                            {/* Blue overlay panels for carousel effect */}
+                            <div className="absolute inset-y-0 left-0 w-1/6 bg-[#0005a3]/60 backdrop-blur-sm hidden md:block border-r border-white/10" />
+                            <div className="absolute inset-y-0 right-0 w-1/6 bg-[#0005a3]/60 backdrop-blur-sm hidden md:block border-l border-white/10" />
+                            
+                            {/* Caption box */}
+                            <div className="absolute bottom-0 left-0 md:left-1/6 w-full md:w-4/6 p-6 bg-blue-600/80 backdrop-blur-md">
+                                <p className="text-white text-sm md:text-base italic">
+                                    "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur vitae nisl vel lacus fermentum tincidunt, at aliquet turpis pretium. Donec nec justo sed velit facilisis tristique in sed magna."
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Pagination dots */}
+                    <div className="flex justify-center gap-3 mt-8">
+                        {slides.map((_, index) => (
+                            <button 
+                                key={index}
+                                onClick={() => setCurrentSlide(index)}
+                                className={`w-3 h-3 rounded-full transition-all ${currentSlide === index ? 'bg-[#00ffff] scale-125' : 'bg-white/50 hover:bg-white/80'}`}
+                                aria-label={`Slide ${index + 1}`}
+                            />
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* Section Lộ trình sự kiện CTS20 */}
+            <section className="py-24 bg-white relative z-20">
+                <div className="container mx-auto px-4 max-w-6xl">
+                    <motion.div 
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true, margin: "-100px" }}
+                        className="text-center mb-16"
+                    >
+                        <h2 className="text-4xl md:text-5xl font-bold text-[#001253] mb-6 leading-tight">
+                            Giờ là lúc<br/>
+                            bước vào hành trình CTS20
+                        </h2>
+                        <div className="text-base md:text-lg text-[#001253]/80 max-w-2xl mx-auto leading-relaxed">
+                            <p>Tin tưởng để dám làm khác.</p>
+                            <p>Tin tưởng để hành động nhanh hơn.</p>
+                            <p>Tin tưởng để tạo ra những đột phá mới.</p>
+                            <p className="mt-2 text-[#001253] font-medium">CTS20 là hành trình nơi Trust được chuyển hóa thành kết quả.</p>
+                        </div>
                     </motion.div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-                        {[
-                            { 
-                                title: "TRUST", 
-                                desc: "Xây dựng niềm tin với khách hàng, đối tác và đồng nghiệp thông qua sự minh bạch và cam kết chất lượng.",
-                                icon: Shield,
-                                color: "from-blue-500 to-cmc-blue"
-                            },
-                            { 
-                                title: "EXPRESS", 
-                                desc: "Tự do sáng tạo, thể hiện đam mê và bứt phá giới hạn để tạo ra những giải pháp công nghệ đột phá.",
-                                icon: Zap,
-                                color: "from-cmc-sky to-cyan-400"
-                            },
-                            { 
-                                title: "TRANSFORM", 
-                                desc: "Không ngừng chuyển đổi, thích ứng và dẫn dắt sự thay đổi trong kỷ nguyên số.",
-                                icon: Rocket,
-                                color: "from-indigo-500 to-blue-600"
-                            }
-                        ].map((value, index) => (
-                            <motion.div
-                                key={index}
-                                initial={{ opacity: 0, y: 30 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true, margin: "-50px" }}
-                                transition={{ delay: index * 0.2 }}
-                                whileHover={{ y: -10 }}
-                                className="bg-white rounded-2xl p-8 shadow-sm hover:shadow-xl transition-all"
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 mb-12">
+                        {/* ACT 1 */}
+                        <motion.div 
+                            initial={{ opacity: 0, y: 30 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: 0.1 }}
+                            className="bg-gradient-to-b from-[#000d6b] to-[#0005a3] rounded-[24px] p-8 text-white relative overflow-hidden group hover:shadow-2xl hover:-translate-y-2 transition-all duration-300"
+                        >
+                            <div className="absolute top-6 left-6">
+                                <span className="inline-block px-4 py-1.5 bg-white/20 backdrop-blur-sm text-white text-xs font-semibold rounded-full">
+                                    Đã kết thúc
+                                </span>
+                            </div>
+                            
+                            <div className="mt-16 mb-4">
+                                <p className="text-white/60 text-sm font-semibold tracking-widest mb-1">ACT 1</p>
+                                <h3 className="text-3xl font-bold tracking-wide">BUILD TRUST</h3>
+                                <p className="text-white/80 mt-2 text-sm font-medium">10/4 - 30/5</p>
+                            </div>
+                            
+                            <div className="space-y-4 text-sm leading-relaxed text-white/90 min-h-[120px]">
+                                <p>
+                                    Hình thành Liên quân.<br/>
+                                    Tập trung vào những quyết định chiến lược <strong>khác biệt.</strong>
+                                </p>
+                                <p>Chia sẻ và kết nối người CTS.</p>
+                            </div>
+                            
+                            <div className="mt-8 pt-6 border-t border-white/10">
+                                <Link to="#" className="inline-flex items-center gap-2 text-sm font-medium hover:text-[#00ffff] transition-colors group-hover:gap-3">
+                                    Xem recap
+                                    <span className="flex">
+                                        <ArrowRight size={14} className="opacity-50" />
+                                        <ArrowRight size={14} className="opacity-75 -ml-1" />
+                                        <ArrowRight size={14} className="-ml-1" />
+                                    </span>
+                                </Link>
+                            </div>
+                        </motion.div>
+
+                        {/* ACT 2 */}
+                        <motion.div 
+                            initial={{ opacity: 0, y: 30 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: 0.2 }}
+                            className="bg-gradient-to-b from-[#0033ff] to-[#001ae6] rounded-[24px] p-8 text-white relative overflow-hidden group hover:shadow-2xl hover:shadow-[#00ffff]/20 hover:-translate-y-2 transition-all duration-300 transform scale-105 z-10"
+                        >
+                            {/* Glow effect for active card */}
+                            <div className="absolute -top-20 -right-20 w-40 h-40 bg-[#00ffff]/30 blur-3xl rounded-full" />
+                            <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-[#ff00ff]/30 blur-3xl rounded-full" />
+
+                            <div className="absolute top-6 left-6 z-20">
+                                <span className="inline-block px-4 py-1.5 bg-gradient-to-r from-[#00ffff] to-[#ff00ff] text-white text-xs font-bold rounded-full shadow-[0_0_15px_rgba(0,255,255,0.5)]">
+                                    Đang diễn ra
+                                </span>
+                            </div>
+                            
+                            <div className="mt-16 mb-4 relative z-20">
+                                <p className="text-white/80 text-sm font-semibold tracking-widest mb-1">ACT 2</p>
+                                <h3 className="text-3xl font-bold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-white to-white">ACT FASTER</h3>
+                                <p className="text-[#00ffff] mt-2 text-sm font-bold">17/4 - 1/7</p>
+                            </div>
+                            
+                            <div className="space-y-4 text-sm leading-relaxed text-white min-h-[120px] relative z-20">
+                                <p>
+                                    Chuyển hóa niềm tin thành hành động.<br/>
+                                    <strong>Nhanh hơn</strong>, quyết liệt hơn.
+                                </p>
+                                <p>Thể thao, sân khấu, sáng tạo.</p>
+                            </div>
+                            
+                            <div className="mt-8 pt-6 border-t border-white/20 relative z-20">
+                                <Link to="#" className="inline-flex items-center gap-2 text-sm font-bold text-[#00ffff] hover:text-white transition-colors group-hover:gap-3">
+                                    Tham gia ngay
+                                    <span className="flex">
+                                        <ArrowRight size={14} className="opacity-50" />
+                                        <ArrowRight size={14} className="opacity-75 -ml-1" />
+                                        <ArrowRight size={14} className="-ml-1" />
+                                    </span>
+                                </Link>
+                            </div>
+                        </motion.div>
+
+                        {/* ACT 3 */}
+                        <motion.div 
+                            initial={{ opacity: 0, y: 30 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: 0.3 }}
+                            className="bg-gradient-to-b from-[#000d6b] to-[#0005a3] rounded-[24px] p-8 text-white relative overflow-hidden group hover:shadow-2xl hover:-translate-y-2 transition-all duration-300"
+                        >
+                            <div className="absolute top-6 left-6">
+                                <span className="inline-block px-4 py-1.5 bg-white/10 backdrop-blur-sm text-white/70 text-xs font-semibold rounded-full border border-white/20">
+                                    Sắp diễn ra
+                                </span>
+                            </div>
+                            
+                            <div className="mt-16 mb-4">
+                                <p className="text-white/50 text-sm font-semibold tracking-widest mb-1">ACT 3</p>
+                                <h3 className="text-3xl font-bold tracking-wide text-white/90">BREAKTHROUGH</h3>
+                                <p className="text-white/60 mt-2 text-sm font-medium">1/8 - 30/9</p>
+                            </div>
+                            
+                            <div className="space-y-4 text-sm leading-relaxed text-white/70 min-h-[120px]">
+                                <p>
+                                    Kết quả thực chất.<br/>
+                                    <strong>Đột phá</strong> đến những ý tưởng và sáng kiến mới.
+                                </p>
+                                <p>Innovation Hackathon.</p>
+                            </div>
+                            
+                            <div className="mt-8 pt-6 border-t border-white/10">
+                                <span className="inline-flex items-center gap-2 text-sm font-medium text-white/40">
+                                    Đang chờ mở khóa
+                                    <span className="flex">
+                                        <ArrowRight size={14} className="opacity-30" />
+                                        <ArrowRight size={14} className="opacity-50 -ml-1" />
+                                        <ArrowRight size={14} className="opacity-70 -ml-1" />
+                                    </span>
+                                </span>
+                            </div>
+                        </motion.div>
+                    </div>
+
+                    <div className="text-center mt-12">
+                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="inline-block">
+                            <Link 
+                                to="/journey" 
+                                className="inline-flex items-center gap-3 px-8 py-4 text-base font-bold text-[#001253] bg-white border-2 border-[#001253]/10 rounded-full hover:bg-gray-50 transition-all shadow-lg hover:shadow-xl"
                             >
-                                <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${value.color} flex items-center justify-center text-white mb-6`}>
-                                    <value.icon size={32} />
-                                </div>
-                                <h3 className="text-2xl font-bold text-cmc-blue mb-4">{value.title}</h3>
-                                <p className="text-gray-600 leading-relaxed">{value.desc}</p>
-                            </motion.div>
-                        ))}
+                                Khám phá CTS20
+                                <span className="flex text-[#001253]">
+                                    <ArrowRight size={18} className="-mr-2" />
+                                    <ArrowRight size={18} />
+                                </span>
+                            </Link>
+                        </motion.div>
                     </div>
                 </div>
             </section>

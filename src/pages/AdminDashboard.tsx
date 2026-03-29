@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import QuestionManager from '../components/QuestionManager';
+import AdminImageUpload from '../components/AdminImageUpload';
 
 interface User {
     id: number;
@@ -16,7 +17,7 @@ interface User {
 
 const AdminDashboard: React.FC = () => {
     const [users, setUsers] = useState<User[]>([]);
-    const [activeTab, setActiveTab] = useState<'users' | 'questions'>('users');
+    const [activeTab, setActiveTab] = useState<'users' | 'questions' | 'images'>('users');
     
     // Filters
     const [filterEmail, setFilterEmail] = useState('');
@@ -71,6 +72,12 @@ const AdminDashboard: React.FC = () => {
                         className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-colors ${activeTab === 'questions' ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}`}
                     >
                         Quản lý Câu hỏi
+                    </button>
+                    <button 
+                        onClick={() => setActiveTab('images')}
+                        className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-colors ${activeTab === 'images' ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}`}
+                    >
+                        Quản lý Hình ảnh
                     </button>
                 </div>
                 <div className="p-4 border-t">
@@ -172,6 +179,15 @@ const AdminDashboard: React.FC = () => {
 
                 {activeTab === 'questions' && (
                     <QuestionManager />
+                )}
+
+                {activeTab === 'images' && (
+                    <div className="bg-white p-6 rounded-lg shadow-md h-[calc(100vh-4rem)]">
+                        <h3 className="text-xl font-bold mb-6">Quản lý Hình ảnh</h3>
+                        <div className="h-[calc(100%-4rem)]">
+                            <AdminImageUpload />
+                        </div>
+                    </div>
                 )}
             </div>
         </div>

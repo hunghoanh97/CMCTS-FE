@@ -64,6 +64,12 @@ const GameHub: React.FC = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
+                // Kiểm tra xem có token không, nếu không có thì redirect về trang đăng nhập
+                if (!localStorage.getItem('token')) {
+                    navigate('/login');
+                    return;
+                }
+
                 const [stagesRes, profileRes, lbRes] = await Promise.all([
                     api.get('/quiz/stages'),
                     api.get('/user/profile'),
