@@ -19,14 +19,11 @@ const Login: React.FC = () => {
         }
     };
 
-    const handleSsoLogin = async () => {
-        try {
-            const response = await api.get('/auth/sso-login');
-            localStorage.setItem('token', response.data.token);
-            navigate('/gamehub');
-        } catch (err: any) {
-            setError(err.response?.data?.message || 'SSO Login failed');
-        }
+    const handleSsoLogin = () => {
+        // Redirect user to backend SSO login endpoint
+        const backendUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5284';
+        const currentUrl = window.location.origin;
+        window.location.href = `${backendUrl}/api/auth/sso-login?returnUrl=${encodeURIComponent(currentUrl + '/gamehub')}`;
     };
 
     return (
@@ -34,6 +31,8 @@ const Login: React.FC = () => {
             <div className="bg-white p-8 rounded shadow-md w-full max-w-md">
                 <h2 className="text-2xl font-bold mb-6 text-center" style={{ color: '#0065B2' }}>CMC TS - CTS20</h2>
                 {error && <p className="text-red-500 mb-4">{error}</p>}
+                
+                {/* Default Login for Admins / Devs */}
                 <form onSubmit={handleLogin} className="space-y-4">
                     <div>
                         <label className="block text-gray-700">Email</label>
@@ -57,18 +56,28 @@ const Login: React.FC = () => {
                     </div>
                     <button
                         type="submit"
-                        className="w-full py-2 text-white rounded transition"
+                        className="w-full py-2 text-white rounded transition hover:opacity-90"
                         style={{ backgroundColor: '#0065B2' }}
                     >
-                        Login
+                        Login bằng Mật khẩu
                     </button>
                 </form>
-                <div className="mt-4 text-center">
+
+                <div className="relative my-6">
+                    <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-gray-300"></div>
+                    </div>
+                    <div className="relative flex justify-center text-sm">
+                        <span className="px-2 bg-white text-gray-500">Hoặc</span>
+                    </div>
+                </div>
+
+                <div className="text-center">
                     <button
                         onClick={handleSsoLogin}
-                        className="w-full py-2 bg-gray-800 text-white rounded transition"
+                        className="w-full py-3 bg-[#0B33CC] hover:bg-[#0A2EDB] text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2"
                     >
-                        SSO Login (Mock)
+                        Đăng nhập với Microsoft (SSO)
                     </button>
                 </div>
             </div>

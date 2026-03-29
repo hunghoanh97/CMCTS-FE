@@ -4,6 +4,7 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import GameHub from './pages/GameHub';
 import AdminDashboard from './pages/AdminDashboard';
+import AuthCallback from './pages/AuthCallback';
 
 const PrivateRoute = ({ children, requireAdmin = false }: { children: React.ReactNode, requireAdmin?: boolean }) => {
     const token = localStorage.getItem('token');
@@ -28,7 +29,8 @@ function App() {
             <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/login" element={<Login />} />
-                <Route 
+                <Route path="/auth/callback" element={<AuthCallback />} />
+                <Route
                     path="/gamehub" 
                     element={
                         <PrivateRoute>
